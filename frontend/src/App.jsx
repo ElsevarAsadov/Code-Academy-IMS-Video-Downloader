@@ -1,9 +1,13 @@
-//ICONS
+//ICONS START
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
 import LoginIcon from '@mui/icons-material/Login';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import CloseIcon from '@mui/icons-material/Close';
-//ICONS
+//ICONS END
+
+//REQUESTS START
+import {sendLoginRequest} from "./axios/axios-client.js";
+//REQUESTS END
 
 
 import * as React from 'react';
@@ -125,7 +129,7 @@ function App() {
             <div id={"main"} className={'w-full h-full'}>
                 <nav className={'h-[10%]  flex items-center justify-end p-4'}>
                     {isLogged ? <p className={'font-bold'}>Salam User <EmojiEmotionsIcon/></p> :
-                        <Button variant={'contained'}>Qeydiyyatdan Kec<LoginIcon/></Button>}
+                        <Button variant={'contained'} onClick={()=>sendLoginRequest()}>Qeydiyyatdan Kec<LoginIcon/></Button>}
                 </nav>
                 <main className={'flex items-center justify-center h-[90%] p-3'}>
                     <div
