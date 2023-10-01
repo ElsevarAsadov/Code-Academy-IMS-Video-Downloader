@@ -63,7 +63,8 @@ while exception_count < MAX_EXCEPTION_LIMIT:
     try:
         response = rq.get(VIDEO_URL, stream=True, headers=HEADER)
 
-        #print(response.headers.get('Content-Type'))
+        #size of video.
+        #print(response.headers.get('Content-Length'))
 
         with open(OUTPUT_FILE_PATH, 'wb') as f:
             for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
