@@ -6,7 +6,7 @@ import CloseIcon from '@mui/icons-material/Close';
 //ICONS END
 
 //REQUESTS START
-import {sendLoginRequest} from "./axios/axios-client.js";
+import {getAccessToken, getUserData, sendLoginRequest} from "./axios/axios-client.js";
 //REQUESTS END
 
 
@@ -16,12 +16,46 @@ import {Alert, Button, Dialog, DialogTitle, TextField} from "@mui/material";
 
 function App() {
     const [isLogged, setLogged] = React.useState(false)
+    const [userData, setUserData] = React.useState([]);
     const [bottomSectionOpened, setBottomSectionOpened] = React.useState(false)
     const [askCookie, setAskCookie] = React.useState(false);
     const animationCtx = React.useRef();
     const animationRoot = React.useRef()
     const mounted = React.useRef(false)
 
+    const TOKEN = localStorage.getItem("ACCESS_TOKEN")
+
+    React.useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+
+        !TOKEN && code && getAccessToken(code).then(r => {
+            if (!r) {
+                setLogged(false);
+            } else {
+                localStorage.setItem("ACCESS_TOKEN", r['access_token'])
+                setLogged(true);
+            }
+        })
+    }, [])
+
+
+    React.useEffect(() => {
+        //userData.map(i => console.log(i))
+        console.log(userData)
+    }, [userData])
+
+    React.useEffect(() => {
+        getUserData().then(r => {
+            console.log(r)
+            if (r.data) {
+                setUserData(r.data);
+                setLogged(true)
+            }
+        }).catch(e => {
+            console.log(e)
+        })
+    }, [isLogged])
 
     React.useEffect(() => {
         animationCtx.current = gsap.context(() => {
@@ -127,9 +161,21 @@ function App() {
                 </div>
             </Dialog>
             <div id={"main"} className={'w-full h-full'}>
-                <nav className={'h-[10%]  flex items-center justify-end p-4'}>
-                    {isLogged ? <p className={'font-bold'}>Salam User <EmojiEmotionsIcon/></p> :
-                        <Button variant={'contained'} onClick={()=>sendLoginRequest()}>Qeydiyyatdan Kec<LoginIcon/></Button>}
+                <nav className={'h-[10%]   flex items-center justify-end p-10 '}>
+                    {isLogged ?
+                        <div className={"hover:cursor-pointer flex items-center  gap-4"}
+                             onClick={() => window.location.assign(`https://github.com/${userData.login}`)}>
+                            <p className={'text-white'}>{userData.login}
+                            </p>
+                            <img
+                                className={'inline aspect-square w-[50px] rounded-[50%]'}
+                                src={userData.avatar_url}
+                            />
+                        </div>
+                        :
+                        <Button variant={'contained'} onClick={() => sendLoginRequest()}>Qeydiyyatdan
+                            Kec<LoginIcon/></Button>
+                    }
                 </nav>
                 <main className={'flex items-center justify-center h-[90%] p-3'}>
                     <div
@@ -169,7 +215,8 @@ function App() {
                     <CloseIcon fontSize={"large"} className={'absolute top-[25px] right-[25px] hover:cursor-pointer'}
                                onClick={() => setBottomSectionOpened(false)}/>
 
-                    <iframe className={'align-center'} width="560" height="315" src="https://www.youtube.com/embed/5NV6Rdv1a3I?si=xzW-KYGLwU4JTIXG"
+                    <iframe className={'align-center'} width="560" height="315"
+                            src="https://www.youtube.com/embed/5NV6Rdv1a3I?si=xzW-KYGLwU4JTIXG"
                             title="YouTube video player" frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowFullScreen></iframe>

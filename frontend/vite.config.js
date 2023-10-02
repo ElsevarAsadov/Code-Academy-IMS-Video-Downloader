@@ -6,5 +6,6 @@ export default defineConfig({
   plugins: [react()],
   server:{
     host: '0.0.0.0',
-  }
+  },
+  base: 'https://elsevarasadov.github.io/Code-Academy-IMS-Video-Downloader/'
 })
