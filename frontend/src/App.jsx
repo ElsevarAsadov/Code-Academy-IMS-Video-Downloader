@@ -35,7 +35,6 @@ function App() {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         //try to get access token
-        console.log(TOKEN)
         if (code && !TOKEN) {
             //set waiting state
             setLogged('waiting')
@@ -55,8 +54,7 @@ function App() {
 
     React.useEffect(() => {
         //if u ser is logged but while requesting server if server sends 401 then it means token is not valid
-        if (isLogged) getUserData(TOKEN).then(data => {
-            console.log("D", data)
+        if (isLogged && TOKEN) getUserData(TOKEN).then(data => {
             data !== false ? setUserData(data) : setLogged(false)
         });
     }, [isLogged])
@@ -173,7 +171,7 @@ function App() {
             </Dialog>
             <div id={"main"} className={'w-full h-full'}>
                 <nav className={'h-[10%]   flex items-center justify-end p-[25px_15px] '}>
-                    {isLogged ?
+                    {isLogged && userData ?
                         <div className={"hover:cursor-pointer flex items-center  gap-4"}
                              onClick={() => window.location.assign(`https://github.com/${userData.login}`)}>
                             <p className={'text-white'}>{userData.login}

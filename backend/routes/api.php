@@ -32,6 +32,7 @@ Route::get("/get-accessToken", function (Request $request) {
         }
         return response()->json(['err' => 'Wrong Verification Code'], 401);
     } else {
+        dump($tokenResponse);
         return response()->json(['err' => 'Some Error Happened When Requesting github.com'], 500);
     }
 });

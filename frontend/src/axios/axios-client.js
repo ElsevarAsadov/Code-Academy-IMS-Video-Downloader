@@ -34,10 +34,9 @@ export function getUserData(token) {
             Accept: 'application/json',
         }
     }).then(response => {
-        return response.data
+        return response?.data
     }).catch(err=>{
-        console.log(err)
-        if(err.response.status === 401) return false;
+        if(err?.response?.status === 401) return false;
     })
 }
 
