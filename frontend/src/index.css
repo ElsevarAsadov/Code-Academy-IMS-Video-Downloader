@@ -6,9 +6,9 @@ body{
     margin: 0;
     padding: 0;
     font-family: "Roboto", sans;
-    background: linear-gradient(-45deg, #03ff6a, #3e02ff);
-    background-size: 200% 200%;
-    animation: bg-animation 15s ease infinite;
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: bg-animation 10s ease infinite;
     backdrop-filter: blur(1vh);
 }
 

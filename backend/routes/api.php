@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Http;
 |
 */
 
-
+//gives user access token to access website.
 Route::get("/get-accessToken", function (Request $request) {
     $code = $request->input('code');
     $tokenURL = sprintf("https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&code=%s",
@@ -26,61 +26,34 @@ Route::get("/get-accessToken", function (Request $request) {
     $tokenResponse = Http::withHeaders(['Accept' => 'application/json'])->post($tokenURL);
 
     if ($tokenResponse->successful()) {
-        if ($tokenResponse->status() == 200) {
+        //if verification code is valid
+        if (isset($tokenResponse->json()['access_token'])) {
             return $tokenResponse->json();
         }
+        return response()->json(['err' => 'Wrong Verification Code'], 401);
     } else {
-        return response()->json(['Some Error Happened When Requesting github.com'], 500);
+        return response()->json(['err' => 'Some Error Happened When Requesting github.com'], 500);
     }
 });
 
+//gets user github account data via access token.
 Route::get('/get-userData', function (Request $request) {
-    //get the pure token format.
+    //get the pure token format : (Bearer xxx-yyy-zzz -> xxx-yyy-zzz) .
     $token = trim(str_replace("Bearer", "", $request->header('Authorization')));
-    $userDataReponse = Http::withToken($token)->get('https://api.github.com/user');
-    if ($userDataReponse->successful()) {
-        if ($userDataReponse->status() == 200) {
+    try {
+        $userDataReponse = Http::withToken($token)->get('https://api.github.com/user');
+        //if token is valid
+        if ($userDataReponse->successful()) {
             return $userDataReponse->json();
         }
-    }else {
-        return response()->json(['error'=>'Some Error Happened When Requesting github.com'], 500);
+        //if user provided token is invalid
+        else if ($userDataReponse->unauthorized()) {
+            return response()->json(['err' => 'invalid token'], 401);
+        }
+        //if other kinda err happens
+        return response()->json(['error' => 'Some Error Happened When Requesting github.com'], 500);
+
+    } catch (Exception) {
+        return response()->json(['error' => 'Some Error Happened When Requesting github.com'], 500);
     }
 });
-
-//Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//    return $request->user();
-//});
-
-
-//Route::get('/auth/callback', function () {
-//    $user = Socialite::driver('github')->stateless()->user();
-//    $token = $user->token;
-//
-//    if(!User::where('token', $user->token)->exists()){
-//        $new_user = new User();
-//        $new_user->id = $user->id;
-//        $new_user->name = $user->user['login'];
-//        $new_user->email = $user->user['email'];
-//        $new_user->avatar = $user->avatar;
-//        $new_user->token = $user->token;
-//        $new_user->github_repo = 'https://www.github.com/'.$user->user['login'];
-//        $new_user->active = false;
-//
-//        $new_user->save();
-//    }
-//
-//    return redirect('http://localhost:5173/Code-Academy-IMS-Video-Downloader/?token=' . $token);
-//    });
-//
-//Route::get('/get-user-data', function(Request $request){
-//    $token = $request->header('Authorization');
-//    $token = trim(str_replace("Bearer", "", $token));
-//    if(!$token){
-//        return response()->json(['error' => 'Unauthorized'], 401);
-//    };
-//
-//    $user = User::where('token', $token)->first();
-//
-//    return response()->json($user);
-//
-//});

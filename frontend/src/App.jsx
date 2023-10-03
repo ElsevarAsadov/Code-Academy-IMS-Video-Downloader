@@ -11,10 +11,16 @@ import {getAccessToken, getUserData, sendLoginRequest} from "./axios/axios-clien
 
 
 import * as React from 'react';
-import {Alert, Button, Dialog, DialogTitle, TextField} from "@mui/material";
+import {Alert, Button, Dialog, DialogTitle, TextField, CircularProgress} from "@mui/material";
 
 
 function App() {
+    /*
+    isLogged State can be 3 state:
+    'true' -> user is logged in
+    'false' -> user is NOT logged in
+    'waiting' -> user requesting server to get state (SHOW LOADING SCREEN)
+    * */
     const [isLogged, setLogged] = React.useState(false)
     const [userData, setUserData] = React.useState([]);
     const [bottomSectionOpened, setBottomSectionOpened] = React.useState(false)
@@ -28,35 +34,34 @@ function App() {
     React.useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
-
-        !TOKEN && code && getAccessToken(code).then(r => {
-            if (!r) {
-                setLogged(false);
-            } else {
-                localStorage.setItem("ACCESS_TOKEN", r['access_token'])
-                setLogged(true);
-            }
-        })
+        //try to get access token
+        console.log(TOKEN)
+        if (code && !TOKEN) {
+            //set waiting state
+            setLogged('waiting')
+            getAccessToken(code).then(r => {
+                setLogged(r)
+            })
+        }
     }, [])
 
 
     React.useEffect(() => {
-        //userData.map(i => console.log(i))
-        console.log(userData)
+        //Assume if there is token then user is logged(anyway token will be removed if one request to server responses 401)
+        if (TOKEN) {
+            setLogged(true);
+        }
     }, [userData])
 
     React.useEffect(() => {
-        getUserData().then(r => {
-            console.log(r)
-            if (r.data) {
-                setUserData(r.data);
-                setLogged(true)
-            }
-        }).catch(e => {
-            console.log(e)
-        })
+        //if u ser is logged but while requesting server if server sends 401 then it means token is not valid
+        if (isLogged) getUserData(TOKEN).then(data => {
+            console.log("D", data)
+            data !== false ? setUserData(data) : setLogged(false)
+        });
     }, [isLogged])
 
+    //GSAP ANIMATION CONTEXT (DO NOT TOUCH IT)
     React.useEffect(() => {
         animationCtx.current = gsap.context(() => {
         }, animationRoot)
@@ -66,6 +71,7 @@ function App() {
         }
     }, [animationCtx])
 
+    //GSAP ANIMATIONS.
     React.useEffect(() => {
         if (mounted.current === false) {
             mounted.current = true
@@ -120,6 +126,11 @@ function App() {
 
     return (
         <div ref={animationRoot} className={'h-screen w-screen overflow-hidden relative'}>
+            <Dialog open={isLogged === 'waiting' ? true : false} className={'w-screen'}>
+                <div className={'flex justify-center items-center w-[30vw] h-[30vh]'}>
+                    <CircularProgress color={'primary'}/>
+                </div>
+            </Dialog>
             <Dialog className={'w-screen'} open={askCookie} onClose={() => setAskCookie(false)}>
                 <DialogTitle className={'relative'}>
                     <p>Cookie Datalari Daxil Edin</p>
@@ -161,7 +172,7 @@ function App() {
                 </div>
             </Dialog>
             <div id={"main"} className={'w-full h-full'}>
-                <nav className={'h-[10%]   flex items-center justify-end p-10 '}>
+                <nav className={'h-[10%]   flex items-center justify-end p-[25px_15px] '}>
                     {isLogged ?
                         <div className={"hover:cursor-pointer flex items-center  gap-4"}
                              onClick={() => window.location.assign(`https://github.com/${userData.login}`)}>
@@ -181,15 +192,7 @@ function App() {
                     <div
                         className={'flex items-stretch gap-2 w-full max-w-[600px] justify-center bg-white p-12 rounded-lg'}>
                         <TextField color={'primary'} fullWidth label="Video Linki"/>
-                        <Button sx={{
-                            ":hover": {
-                                backgroundColor: 'black',
-                                color: 'white'
-                            }
-                        }}
-                                variant={'outlined'}
-
-
+                        <Button variant={'contained'}
                                 onClick={() => {
                                     if (!isLogged) {
                                         setAskCookie(true)
@@ -211,11 +214,11 @@ function App() {
                     <br/>
                     <p className={'text-xs'}>Nece Endireceyimi Bilmirem</p>
                 </div>
-                <div id={'manual'} className={'hidden justify-center items-center'}>
+                <div id={'manual'} className={'hidden justify-center items-center '}>
                     <CloseIcon fontSize={"large"} className={'absolute top-[25px] right-[25px] hover:cursor-pointer'}
                                onClick={() => setBottomSectionOpened(false)}/>
 
-                    <iframe className={'align-center'} width="560" height="315"
+                    <iframe className={'align-center w-[100%] aspect-video'} width="560" height="315"
                             src="https://www.youtube.com/embed/5NV6Rdv1a3I?si=xzW-KYGLwU4JTIXG"
                             title="YouTube video player" frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
