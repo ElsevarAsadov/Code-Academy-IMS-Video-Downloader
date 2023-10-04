@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'token',
+        'cookies',
         'avatar',
         'github_repo',
         'active'
@@ -35,7 +36,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
-        'remember_token',
+        'token',
     ];
 
     /**
@@ -44,7 +45,6 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 }

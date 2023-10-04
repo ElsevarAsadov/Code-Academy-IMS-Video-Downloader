@@ -1,5 +1,4 @@
 import axios from "axios";
-import * as response from "autoprefixer";
 
 const AXIOSCLIENT = axios.create({
     baseURL: `${import.meta.env.VITE_API_BASE_URL}/api`,
@@ -9,6 +8,7 @@ AXIOSCLIENT.interceptors.response.use(null, err => {
     //whenever in request user fails due to authorization then remove access_token
     if (err.response.status === 401) {
         localStorage.removeItem("ACCESS_TOKEN")
+        localStorage.removeItem("USER")
     }
 })
 
@@ -38,6 +38,21 @@ export function getUserData(token) {
     }).catch(err=>{
         if(err?.response?.status === 401) return false;
     })
+}
+
+export function saveCookies(id, token, cookies){
+    return AXIOSCLIENT.patch(`/save-cookies/${id}`, cookies, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }).then(response=>{
+        if(response?.status === 200) return true;
+        return false;
+    }).catch(e=>{
+        console.log(e)
+        return false;
+    });
+
 }
 
 

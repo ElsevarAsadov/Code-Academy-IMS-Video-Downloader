@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use \App\Models\User;
 use Illuminate\Support\Facades\Http;
-
+use App\Http\Middleware\CheckAccessToken;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -26,13 +26,31 @@ Route::get("/get-accessToken", function (Request $request) {
     $tokenResponse = Http::withHeaders(['Accept' => 'application/json'])->post($tokenURL);
 
     if ($tokenResponse->successful()) {
+        $token = $tokenResponse->json()['access_token'];
         //if verification code is valid
-        if (isset($tokenResponse->json()['access_token'])) {
-            return $tokenResponse->json();
+        if (isset($token)) {
+
+            $userDataReponse = Http::withToken($token)->get('https://api.github.com/user');
+            //check if user is already in db
+            $existing_token = User::where('id', (int)$userDataReponse['id'])->first();
+            if(!$existing_token){
+                //creating user data in DB
+                $newUser = new User();
+                $newUser->id = (int)$userDataReponse['id'];
+                $newUser->name = $userDataReponse['name'];
+                $newUser->email = $userDataReponse['email'];
+                $newUser->avatar = $userDataReponse['avatar_url'];
+                $newUser->token = $token;
+                $newUser->github_repo = sprintf('https://github.com/%s', $userDataReponse['login']);
+
+                $newUser->save();
+            }else{
+                return response()->json(['access_token'=>$existing_token->token]);
+            }
+
         }
         return response()->json(['err' => 'Wrong Verification Code'], 401);
     } else {
-        dump($tokenResponse);
         return response()->json(['err' => 'Some Error Happened When Requesting github.com'], 500);
     }
 });
@@ -58,3 +76,27 @@ Route::get('/get-userData', function (Request $request) {
         return response()->json(['error' => 'Some Error Happened When Requesting github.com'], 500);
     }
 });
+
+//saves cookies in db
+Route::patch('/save-cookies/{id}', function(Request $request, $id) {
+    try {
+        $request->validate([
+            'PHPSESSID' => 'required',
+            'login_token'=> 'required',
+            'cookie_microstats_visibility'=> 'required'
+        ]);
+        if(count($request->all()) !== 3){
+            throw new Exception("too many payload args");
+        }
+    }catch (Exception){
+        return response()->json(['err'=>'Invalid request payload', ], 400);
+    }
+
+    $user = User::where('id', $id)->first();
+    if($user){
+        $user->update(['cookies'=>$request->all()]);
+        return response()->json(['msg'=>'User Cookies Patched Successfully'], 200);
+    }else{
+        return response()->json(['err'=>'Something happened when patching user cookies'], 409);
+    }
+})->middleware([CheckAccessToken::class]);

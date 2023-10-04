@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->integer('id')->unique();
+            $table->integer('id')->unique()->primary();
             $table->string('name')->unique();
-            $table->string('email');
+            $table->string('email')->nullable();
             $table->string('avatar');
             $table->string('token');
+            $table->json('cookies')->nullable()->default(null);
             $table->string('github_repo')->unique();
-            $table->boolean('active');
-            $table->rememberToken();
+            $table->boolean('active')->default(false);
             $table->timestamps();
         });
     }

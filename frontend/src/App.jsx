@@ -6,12 +6,22 @@ import CloseIcon from '@mui/icons-material/Close';
 //ICONS END
 
 //REQUESTS START
-import {getAccessToken, getUserData, sendLoginRequest} from "./axios/axios-client.js";
+import {getAccessToken, getUserData, saveCookies, sendLoginRequest} from "./axios/axios-client.js";
 //REQUESTS END
 
 
 import * as React from 'react';
-import {Alert, Button, Dialog, DialogTitle, TextField, CircularProgress} from "@mui/material";
+import {
+    Alert,
+    Button,
+    Dialog,
+    DialogTitle,
+    TextField,
+    CircularProgress,
+    Snackbar,
+    SnackbarContent,
+    FormControl
+} from "@mui/material";
 
 
 function App() {
@@ -22,14 +32,31 @@ function App() {
     'waiting' -> user requesting server to get state (SHOW LOADING SCREEN)
     * */
     const [isLogged, setLogged] = React.useState(false)
+    const [loadingState, setLoadingState] = React.useState(false);
     const [userData, setUserData] = React.useState([]);
     const [bottomSectionOpened, setBottomSectionOpened] = React.useState(false)
+    const [snackBarVisibility, setSnackBarVisibility] = React.useState(false)
+    const [snackBarMessage, setSnackBarMessage] = React.useState('');
     const [askCookie, setAskCookie] = React.useState(false);
     const animationCtx = React.useRef();
     const animationRoot = React.useRef()
     const mounted = React.useRef(false)
 
+    //FORM STATES
+    const [phpsession, setPhpsession] = React.useState('')
+    const [loginToken, setLoginToken] = React.useState('')
+    const [microstats, setMicrostats] = React.useState('')
+
+    //FORM STATES
+
+
     const TOKEN = localStorage.getItem("ACCESS_TOKEN")
+
+
+    const modalTexts = {
+        'save-cookie': 'Melumat Servere Gonderilir',
+        'logging-in': 'Serverden Cavab Gozlenilir',
+    }
 
     React.useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -37,9 +64,10 @@ function App() {
         //try to get access token
         if (code && !TOKEN) {
             //set waiting state
-            setLogged('waiting')
+            setLoadingState('logging-in')
             getAccessToken(code).then(r => {
                 setLogged(r)
+                setLoadingState(false)
             })
         }
     }, [])
@@ -124,62 +152,113 @@ function App() {
 
     return (
         <div ref={animationRoot} className={'h-screen w-screen overflow-hidden relative'}>
-            <Dialog open={isLogged === 'waiting' ? true : false} className={'w-screen'}>
-                <div className={'flex justify-center items-center w-[30vw] h-[30vh]'}>
+
+            <Snackbar open={snackBarVisibility} autoHideDuration={6000}>
+                <Alert severity="success" sx={{width: '100%', color: 'black'}}>
+                    <p>{snackBarMessage}</p>
+                </Alert>
+            </Snackbar>
+
+            {/*Logging Info*/}
+            <Dialog open={loadingState} className={'w-screen'}>
+                <div className={'flex justify-center items-center w-[30vw] h-[30vh] gap-4'}>
                     <CircularProgress color={'primary'}/>
+                    <p>{modalTexts[loadingState]}</p>
                 </div>
             </Dialog>
+            {/*Logging Info*/}
+
+            {/*Cookie Modal*/}
             <Dialog className={'w-screen'} open={askCookie} onClose={() => setAskCookie(false)}>
                 <DialogTitle className={'relative'}>
                     <p>Cookie Datalari Daxil Edin</p>
                     <CloseIcon className={'absolute top-[6px] right-[6px] hover:cursor-pointer'}
                                onClick={() => setAskCookie(false)}/>
                 </DialogTitle>
-                <div className='w-screen  max-w-full flex flex-col items-center gap-8 p-12'>
-                    <TextField
-                        sx={{display: 'block'}}
-                        defaultValue={''}
-                        InputLabelProps={{
-                            shrink: true,
-                        }}
-                        label="PHPSESSID:"
-                        variant={"standard"}/>
-                    <TextField sx={{display: 'block'}}
-                               InputLabelProps={{
-                                   shrink: true,
-                               }}
-                               defaultValue={''}
-                               className="block"
-                               label="login_token:"
-                               variant={"standard"}/>
-                    <TextField sx={{display: 'block'}}
-                               InputLabelProps={{
-                                   shrink: true,
-                               }}
-                               defaultValue={''}
-                               className="block"
-                               label="cookie_microstats_visibility:"
-                               variant={"standard"}/>
-                    <Alert severity="warning">CA LMS platformunun backend <a className={'text-blue-500'}
+                <form onSubmit={(e) => {
+                    e.preventDefault()
+
+                    setLoadingState('save-cookie')
+                    const cookies = {
+                        'PHPSESSID': phpsession,
+                        'login_token': loginToken,
+                        'cookie_microstats_visibility': microstats,
+                    }
+                    console.log(cookies)
+                    const token = localStorage.getItem('ACCESS_TOKEN')
+                    if (token && userData?.id) {
+                        saveCookies(userData.id, token, cookies).then((r) => {
+                            setLoadingState(false)
+                            setSnackBarVisibility(true)
+                            setSnackBarMessage(`Data ugurla servere gonderildi`)
+                            setTimeout(() => setSnackBarVisibility(false), 5000)
+                        })
+                    }
+                }}>
+                    <div className='w-screen  max-w-full flex flex-col items-center gap-8 p-12'>
+                        <TextField
+                            sx={{display: 'block'}}
+                            defaultValue={''}
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                            label="PHPSESSID:"
+                            variant={"standard"}
+                            onChange={(e) => setPhpsession(e.target.value)}
+                            required
+                        />
+                        <TextField sx={{display: 'block'}}
+                                   InputLabelProps={{
+                                       shrink: true,
+                                   }}
+                                   defaultValue={''}
+                                   className="block"
+                                   label="login_token:"
+                                   variant={"standard"}
+                                   onChange={(e) => setLoginToken(e.target.value)}
+                                   required
+                        />
+                        <TextField sx={{display: 'block'}}
+                                   InputLabelProps={{
+                                       shrink: true,
+                                   }}
+                                   defaultValue={''}
+                                   className="block"
+                                   label="cookie_microstats_visibility:"
+                                   variant={"standard"}
+                                   onChange={(e) => setMicrostats(e.target.value)}
+                                   required
+                        />
+                        <Button type={'submit'}
+                                variant={'contained'}>Yadda Saxla</Button>
+
+                    </div>
+                    <Alert sx={{margin: '5%'}} severity="warning">CA LMS platformunun backend <a className={'text-blue-500'}
                                                                              href={'https://en.wikipedia.org/wiki/Implementation'}
                                                                              target={"_blank"}>implementasiya</a>-sina
                         gore bu <a href={"https://en.wikipedia.org/wiki/HTTP_cookie"}
                                    target={"_blank"}
                                    className={'text-blue-500'}>cookie</a>-ler yanliz ve yanlis maksumum 2 gun
                         gecerlidir!</Alert>
-                </div>
+                </form>
             </Dialog>
+            {/*Cookie Modal*/}
+
+            {/*Website Content*/}
             <div id={"main"} className={'w-full h-full'}>
                 <nav className={'h-[10%]   flex items-center justify-end p-[25px_15px] '}>
                     {isLogged && userData ?
-                        <div className={"hover:cursor-pointer flex items-center  gap-4"}
-                             onClick={() => window.location.assign(`https://github.com/${userData.login}`)}>
-                            <p className={'text-white'}>{userData.login}
-                            </p>
-                            <img
-                                className={'inline aspect-square w-[50px] rounded-[50%]'}
-                                src={userData.avatar_url}
-                            />
+                        <div className={"hover:cursor-pointer flex items-center  gap-4"}>
+                            <a target={'_blank'} href={`https://github.com/${userData.login}`}>
+                                <p className={'text-white'}>{userData.login}
+                                </p>
+                            </a>
+                            <a target={'_blank'} href={`https://github.com/${userData.login}`}>
+                                <img
+                                    className={'inline aspect-square w-[50px] rounded-[50%]'}
+                                    src={userData.avatar_url}
+                                />
+                            </a>
                         </div>
                         :
                         <Button variant={'contained'} onClick={() => sendLoginRequest()}>Qeydiyyatdan
@@ -192,9 +271,7 @@ function App() {
                         <TextField color={'primary'} fullWidth label="Video Linki"/>
                         <Button variant={'contained'}
                                 onClick={() => {
-                                    if (!isLogged) {
-                                        setAskCookie(true)
-                                    }
+                                    setAskCookie(true)
                                 }}
                         >Endir
                         </Button>
@@ -223,6 +300,8 @@ function App() {
                             allowFullScreen></iframe>
                 </div>
             </div>
+            {/*Website Content*/
+            }
         </div>
     )
 }
