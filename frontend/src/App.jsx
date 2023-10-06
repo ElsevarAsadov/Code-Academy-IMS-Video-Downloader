@@ -6,7 +6,7 @@ import CloseIcon from '@mui/icons-material/Close';
 //ICONS END
 
 //REQUESTS START
-import {getAccessToken, getUserData, saveCookies, sendLoginRequest} from "./axios/axios-client.js";
+import {downloadVideo, getAccessToken, getUserData, saveCookies, sendLoginRequest} from "./axios/axios-client.js";
 //REQUESTS END
 
 
@@ -48,6 +48,8 @@ function App() {
     const [loginToken, setLoginToken] = React.useState('')
     const [microstats, setMicrostats] = React.useState('')
 
+    const [fileId, setFileId] = React.useState();
+
     //FORM STATES
 
 
@@ -57,7 +59,7 @@ function App() {
     const modalTexts = {
         'save-cookie': 'Melumat Servere Gonderilir',
         'logging-in': 'Serverden Cavab Gozlenilir',
-        'downloading': "Xahis olunur gozleyin video serverde hazirlanir.Bu videonun uzunlugundan asili olaraq bir muddet ceke biler."
+        'downloading': "Xahis olunur gozleyin video serverde hazirlanir.Bu videonun uzunlugundan asili olaraq bir muddet ceke biler.",
     }
 
     function checkCookiesStatus() {
@@ -288,12 +290,16 @@ function App() {
                 <main className={'flex items-center justify-center h-[90%] p-3'}>
                     <div
                         className={'flex items-stretch gap-2 w-full max-w-[600px] justify-center bg-white p-12 rounded-lg'}>
-                        <TextField color={'primary'} fullWidth label="Video Linki"/>
+                        <TextField  color={'primary'} fullWidth label="Video Linki" onChange={(e)=>setFileId(e.target.value)}/>
                         <Button variant={'contained'}
                                 onClick={() => {
                                     if (isLogged && !checkCookiesStatus()) setAskCookie(true)
                                     else if (isLogged && checkCookiesStatus()) {
                                        setLoadingState("downloading")
+                                        const token = localStorage.getItem('ACCESS_TOKEN')
+                                        const id = userData['id']
+                                        window.location = `${import.meta.env.VITE_API_BASE_URL}/api/download/${id}/${fileId}`
+                                        setLoadingState(false)
                                     } else {
                                         setSnackBarMessage("Xahis olunur ilk once qeydiyyatdan kecin")
                                         setSnackBarState('error')

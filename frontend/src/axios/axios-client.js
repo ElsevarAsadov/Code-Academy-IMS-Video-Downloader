@@ -35,28 +35,33 @@ export function getUserData(token) {
         }
     }).then(response => {
         return response?.data
-    }).catch(err=>{
-        if(err?.response?.status === 401) return false;
+    }).catch(err => {
+        if (err?.response?.status === 401) return false;
     })
 }
 
-export function saveCookies(id, token, cookies){
+export function saveCookies(id, token, cookies) {
     return AXIOSCLIENT.patch(`/save-cookies/${id}`, cookies, {
         headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
         }
-    }).then(response=>{
-        if(response?.status === 200) return true;
+    }).then(response => {
+        if (response?.status === 200) return true;
         return false;
-    }).catch(e=>{
+    }).catch(e => {
         console.log(e)
         return false;
     });
 
 }
 
-export function downloadVideo(token){
-
+export function downloadVideo(token, id, video_id) {
+    return AXIOSCLIENT.get(`/download/${id}/${video_id}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            responseType: 'blob',
+        }
+    })
 }
 
 

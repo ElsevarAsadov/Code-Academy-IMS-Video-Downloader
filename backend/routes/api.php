@@ -44,6 +44,7 @@ Route::get("/get-accessToken", function (Request $request) {
                 $newUser->avatar = $userDataReponse['avatar_url'];
                 $newUser->token = $token;
                 $newUser->github_repo = sprintf('https://github.com/%s', $userDataReponse['login']);
+                $newUser->save();
                 return response()->json(['access_token' => $token]);
 
             } else {
@@ -125,7 +126,10 @@ Route::get("/download/{id}/{video_id}", function (Request $request, $id, $video_
             $files = new \App\Models\DeleteFiles();
             $files->files = storage_path('app/video_cache/'.$video_name);
             $files->save();
-            return response()->download(storage_path('app/video_cache/'.$video_name));
+            return response()->download(storage_path('app/video_cache/'.$video_name), 'video.mp4', [
+                'Content-Type' => 'video/mp4',
+                'Content-Disposition' => 'attachment; filename="video.mp4"',
+            ]);
         }
         else{
             return response()->status(400);
