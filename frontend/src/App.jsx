@@ -37,11 +37,12 @@ function App() {
     const [bottomSectionOpened, setBottomSectionOpened] = React.useState(false)
     const [snackBarVisibility, setSnackBarVisibility] = React.useState(false)
     const [snackBarMessage, setSnackBarMessage] = React.useState('');
+    const [snackBarState, setSnackBarState] = React.useState();
     const [askCookie, setAskCookie] = React.useState(false);
     const animationCtx = React.useRef();
     const animationRoot = React.useRef()
     const mounted = React.useRef(false)
-
+    const snackBarTimeoutRef = React.useRef()
     //FORM STATES
     const [phpsession, setPhpsession] = React.useState('')
     const [loginToken, setLoginToken] = React.useState('')
@@ -56,6 +57,12 @@ function App() {
     const modalTexts = {
         'save-cookie': 'Melumat Servere Gonderilir',
         'logging-in': 'Serverden Cavab Gozlenilir',
+        'downloading': "Xahis olunur gozleyin video serverde hazirlanir.Bu videonun uzunlugundan asili olaraq bir muddet ceke biler."
+    }
+
+    function checkCookiesStatus() {
+        if (snackBarState) return true
+        return userData?.PHPSESSID && userData?.login_token && userData?.cookie_microstats_visibility
     }
 
     React.useEffect(() => {
@@ -83,7 +90,14 @@ function App() {
     React.useEffect(() => {
         //if u ser is logged but while requesting server if server sends 401 then it means token is not valid
         if (isLogged && TOKEN) getUserData(TOKEN).then(data => {
-            data !== false ? setUserData(data) : setLogged(false)
+            if (data !== false) {
+                setUserData(data)
+                setPhpsession(data?.PHPSESSID || "")
+                setLoginToken(data?.login_token || "")
+                setMicrostats(data?.cookie_microstats_visibility || "")
+            } else {
+                setLogged(false)
+            }
         });
     }, [isLogged])
 
@@ -152,16 +166,21 @@ function App() {
 
     return (
         <div ref={animationRoot} className={'h-screen w-screen overflow-hidden relative'}>
-
+            <Dialog open={loadingState === 'downloading'}>
+                <div className={'flex flex-col justify-center items-center  p-6 gap-4'}>
+                    <CircularProgress sx={{display: 'block'}} color={'primary'}/>
+                    <p>{modalTexts[loadingState]}</p>
+                </div>
+            </Dialog>
             <Snackbar open={snackBarVisibility} autoHideDuration={6000}>
-                <Alert severity="success" sx={{width: '100%', color: 'black'}}>
+                <Alert severity={snackBarState} sx={{width: '100%', color: 'black'}}>
                     <p>{snackBarMessage}</p>
                 </Alert>
             </Snackbar>
 
             {/*Logging Info*/}
-            <Dialog open={loadingState} className={'w-screen'}>
-                <div className={'flex justify-center items-center w-[30vw] h-[30vh] gap-4'}>
+            <Dialog open={loadingState == true} className={'w-screen'}>
+                <div className={'flex flex-col justify-center items-center  gap-4'}>
                     <CircularProgress color={'primary'}/>
                     <p>{modalTexts[loadingState]}</p>
                 </div>
@@ -184,21 +203,21 @@ function App() {
                         'login_token': loginToken,
                         'cookie_microstats_visibility': microstats,
                     }
-                    console.log(cookies)
                     const token = localStorage.getItem('ACCESS_TOKEN')
                     if (token && userData?.id) {
                         saveCookies(userData.id, token, cookies).then((r) => {
                             setLoadingState(false)
+                            setSnackBarState('success')
                             setSnackBarVisibility(true)
                             setSnackBarMessage(`Data ugurla servere gonderildi`)
-                            setTimeout(() => setSnackBarVisibility(false), 5000)
+                            snackBarTimeoutRef.current = setTimeout(() => setSnackBarVisibility(false), 5000)
                         })
                     }
                 }}>
                     <div className='w-screen  max-w-full flex flex-col items-center gap-8 p-12'>
                         <TextField
                             sx={{display: 'block'}}
-                            defaultValue={''}
+                            placeholder={phpsession}
                             InputLabelProps={{
                                 shrink: true,
                             }}
@@ -211,7 +230,7 @@ function App() {
                                    InputLabelProps={{
                                        shrink: true,
                                    }}
-                                   defaultValue={''}
+                                   placeholder={loginToken}
                                    className="block"
                                    label="login_token:"
                                    variant={"standard"}
@@ -222,7 +241,7 @@ function App() {
                                    InputLabelProps={{
                                        shrink: true,
                                    }}
-                                   defaultValue={''}
+                                   placeholder={microstats}
                                    className="block"
                                    label="cookie_microstats_visibility:"
                                    variant={"standard"}
@@ -233,9 +252,10 @@ function App() {
                                 variant={'contained'}>Yadda Saxla</Button>
 
                     </div>
-                    <Alert sx={{margin: '5%'}} severity="warning">CA LMS platformunun backend <a className={'text-blue-500'}
-                                                                             href={'https://en.wikipedia.org/wiki/Implementation'}
-                                                                             target={"_blank"}>implementasiya</a>-sina
+                    <Alert sx={{margin: '5%'}} severity="warning">CA LMS platformunun backend <a
+                        className={'text-blue-500'}
+                        href={'https://en.wikipedia.org/wiki/Implementation'}
+                        target={"_blank"}>implementasiya</a>-sina
                         gore bu <a href={"https://en.wikipedia.org/wiki/HTTP_cookie"}
                                    target={"_blank"}
                                    className={'text-blue-500'}>cookie</a>-ler yanliz ve yanlis maksumum 2 gun
@@ -271,9 +291,29 @@ function App() {
                         <TextField color={'primary'} fullWidth label="Video Linki"/>
                         <Button variant={'contained'}
                                 onClick={() => {
-                                    setAskCookie(true)
+                                    if (isLogged && !checkCookiesStatus()) setAskCookie(true)
+                                    else if (isLogged && checkCookiesStatus()) {
+                                       setLoadingState("downloading")
+                                    } else {
+                                        setSnackBarMessage("Xahis olunur ilk once qeydiyyatdan kecin")
+                                        setSnackBarState('error')
+                                        setSnackBarVisibility(true)
+                                        setTimeout(() => setSnackBarVisibility(false), 5000);
+                                    }
                                 }}
                         >Endir
+                        </Button>
+                        <Button variant={'outlined'}
+                                onClick={() => {
+                                    if (isLogged) setAskCookie(true)
+                                    else {
+                                        setSnackBarMessage("Xahis olunur ilk once qeydiyyatdan kecin")
+                                        setSnackBarState('error')
+                                        setSnackBarVisibility(true)
+                                        setTimeout(() => setSnackBarVisibility(false), 5000);
+                                    }
+                                }}
+                        >Cookie
                         </Button>
                     </div>
                 </main>

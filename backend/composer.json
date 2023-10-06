@@ -11,7 +11,9 @@
         "laravel/sanctum": "^3.2",
         "laravel/socialite": "^5.9",
         "laravel/telescope": "^4.16",
-        "laravel/tinker": "^2.8"
+        "laravel/tinker": "^2.8",
+        "ramsey/uuid": "^4.7",
+        "spatie/async": "^1.6"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

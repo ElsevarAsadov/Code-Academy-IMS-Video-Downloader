@@ -8,7 +8,6 @@ from os.path import join
 from sys import argv
 from time import sleep
 
-
 def mb2kb(kb):
     return kb * 1024
 
@@ -24,13 +23,15 @@ VIDEO_CACHE_FOLDER_PATH = getenv("VIDEO_CACHE_FOLDER_PATH")
 
 this python process will call from other process like this
 
-SCRIPT_NAME.PY + COOKIE + URL
+SCRIPT_NAME.PY + COOKIE + URL + FILE_NAME + ONLY_GET_SIZE:Bool
 
 """
 
 try:
     COOKIE = argv[1]
     URL = argv[2]
+    OUTPUT_FILE_NAME = argv[3]
+    GET_SIZE = True if argv[4].lower() == 'true' else False
 except Exception:
     # send error exit code.
     exit(2)
@@ -51,12 +52,12 @@ source = iframe_soup.find("source", recursive=True)
 VIDEO_URL = source.attrs['src']
 
 
-OUTPUT_FILE_NAME = f"{uuid4()}.mp4"
-COMPRESSED_FILE_NAME = f"{uuid4()}.mp4"
-FILE_PATH = join(getcwd(), "..", "..", VIDEO_CACHE_FOLDER_PATH)
+#COMPRESSED_FILE_NAME = f"{uuid4()}.mp4"
+#FILE_PATH = join(getcwd(), "..", "..", VIDEO_CACHE_FOLDER_PATH)
+FILE_PATH = r"C:\Users\Es\Desktop\CA-Video\backend\storage\app\video_cache"
 
 OUTPUT_FILE_PATH = join(FILE_PATH, OUTPUT_FILE_NAME)
-COMPRESSED_FILE_PATH = join(FILE_PATH, COMPRESSED_FILE_NAME)
+#COMPRESSED_FILE_PATH = join(FILE_PATH, COMPRESSED_FILE_NAME)
 
 exception_count = 0
 while exception_count < MAX_EXCEPTION_LIMIT:
@@ -64,20 +65,22 @@ while exception_count < MAX_EXCEPTION_LIMIT:
         response = rq.get(VIDEO_URL, stream=True, headers=HEADER)
 
         #size of video.
-        #print(response.headers.get('Content-Length'))
+        if GET_SIZE:
+            print(response.headers.get('Content-Length'))
+            exit(1)
 
         with open(OUTPUT_FILE_PATH, 'wb') as f:
             for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
                 f.write(chunk)
 
-        if DO_COMPRESS: ffmpeg.input(OUTPUT_FILE_PATH).output(COMPRESSED_FILE_PATH, b='500k').run()
-        print(OUTPUT_FILE_PATH)
-        exit(0)
+        #if DO_COMPRESS: ffmpeg.input(OUTPUT_FILE_PATH).output(COMPRESSED_FILE_PATH, b='500k').run()
+        #print(OUTPUT_FILE_PATH)
+        exit(100)
     except Exception as e:
         exception_count += 1
         sleep(2)
 
 
 # send file path to caller process to delete cache
-remove(OUTPUT_FILE_PATH)
+#remove(OUTPUT_FILE_PATH)
 exit(1)
