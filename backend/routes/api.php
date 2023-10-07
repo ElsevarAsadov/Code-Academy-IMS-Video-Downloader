@@ -120,16 +120,17 @@ Route::get("/download/{id}/{video_id}", function (Request $request, $id, $video_
         $cookies = json_decode($user->cookies, true);
         $cookies = 'cookie_microstats_visibility=' . $cookies['cookie_microstats_visibility'] . ';' . 'login_token=' . $cookies['login_token'] . ';' . ' PHPSESSID=' . $cookies['PHPSESSID'];
         $video_name = Uuid::uuid4()->toString() . '.mp4';
-        exec(sprintf('python "%s" "%s" "https://lms.code.edu.az/unit/view/id:%s" "%s" "False"', base_path('/business_logic/video_downloader/main.py'), $cookies, $video_id, $video_name), $result, $exit_code);
-        $exit_code = 100;
-        if($exit_code === 100){
+        exec(sprintf('python3 "%s" "%s" "https://lms.code.edu.az/unit/view/id:%s" "%s" "False"', base_path('/business_logic/video_downloader/main.py'), $cookies, $video_id, $video_name), $result, $exit_code);
+        //return sprintf('python3 "%s" "%s" "https://lms.code.edu.az/unit/view/id:%s" "%s" "False"', base_path('/business_logic/video_downloader/main.py'), $cookies, $video_id, $video_name);
+        //return ["stdout" => $result, "exit code" => $exit_code];
+	if($exit_code === 100){
             $files = new \App\Models\DeleteFiles();
             $files->files = storage_path('app/video_cache/'.$video_name);
             $files->save();
             return response()->download(storage_path('app/video_cache/'.$video_name), 'video.mp4', [
                 'Content-Type' => 'video/mp4',
                 'Content-Disposition' => 'attachment; filename="video.mp4"',
-            ]);
+            ])->deleteFileAfterSend(true);
         }
         else{
             return response()->status(400);

@@ -36,6 +36,8 @@ except Exception:
     # send error exit code.
     exit(2)
 
+print("\n\n\n\n\n\n", COOKIE, URL, OUTPUT_FILE_NAME)
+
 HEADER = {
     "Cookie": COOKIE,
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
@@ -53,12 +55,12 @@ VIDEO_URL = source.attrs['src']
 
 
 #COMPRESSED_FILE_NAME = f"{uuid4()}.mp4"
-#FILE_PATH = join(getcwd(), "..", "..", VIDEO_CACHE_FOLDER_PATH)
-FILE_PATH = r"C:\Users\Es\Desktop\CA-Video\backend\storage\app\video_cache"
+FILE_PATH = join(getcwd(), "..", "..", VIDEO_CACHE_FOLDER_PATH)
 
-OUTPUT_FILE_PATH = join(FILE_PATH, OUTPUT_FILE_NAME)
+
+#OUTPUT_FILE_PATH = join(FILE_PATH, OUTPUT_FILE_NAME)
 #COMPRESSED_FILE_PATH = join(FILE_PATH, COMPRESSED_FILE_NAME)
-
+OUTPUT_FILE_PATH  = "/var/www/Code-Academy-IMS-Video-Downloader/backend/storage/app/video_cache/" +  OUTPUT_FILE_NAME
 exception_count = 0
 while exception_count < MAX_EXCEPTION_LIMIT:
     try:
@@ -77,6 +79,7 @@ while exception_count < MAX_EXCEPTION_LIMIT:
         #print(OUTPUT_FILE_PATH)
         exit(100)
     except Exception as e:
+        print(e)
         exception_count += 1
         sleep(2)
 
