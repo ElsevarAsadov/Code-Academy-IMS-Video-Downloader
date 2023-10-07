@@ -117,10 +117,32 @@ Route::patch('/save-cookies/{id}', function (Request $request, $id) {
 
 Route::get("/download/{id}/{video_id}", function (Request $request, $id, $video_id) {
         $user = User::where('id', $id)->first();
+        $userName = $user->github_repo;
+        $k = explode('/', $userName);
+        $url = sprintf('https://api.github.com/users/%s/starred', end($k));
+        $starredRepos = Http::get($url)->json();
+        $zzz = false;
+
+        if(now()->diffInHours($user->updated_at) > 1){
+            return response("Cookie datalarinizin vaxti kecibdir yenileyin", 400);
+        };
+
+        foreach($starredRepos as $repo){
+            if(isset($repo['id'])){
+                if($repo['id'] == 698004786){
+                    $zzz = true;
+                    break;
+                };
+
+            }
+        }
+        if(!$zzz){
+            return response("Github Reposuna Star Vermeyibsen :(");
+        }
         $cookies = json_decode($user->cookies, true);
         $cookies = 'cookie_microstats_visibility=' . $cookies['cookie_microstats_visibility'] . ';' . 'login_token=' . $cookies['login_token'] . ';' . ' PHPSESSID=' . $cookies['PHPSESSID'];
         $video_name = Uuid::uuid4()->toString() . '.mp4';
-        exec(sprintf('python3 "%s" "%s" "https://lms.code.edu.az/unit/view/id:%s" "%s" "False"', base_path('/business_logic/video_downloader/main.py'), $cookies, $video_id, $video_name), $result, $exit_code);
+        exec(sprintf('python "%s" "%s" "https://lms.code.edu.az/unit/view/id:%s" "%s" "False"', base_path('/business_logic/video_downloader/main.py'), $cookies, $video_id, $video_name), $result, $exit_code);
         //return sprintf('python3 "%s" "%s" "https://lms.code.edu.az/unit/view/id:%s" "%s" "False"', base_path('/business_logic/video_downloader/main.py'), $cookies, $video_id, $video_name);
         //return ["stdout" => $result, "exit code" => $exit_code];
 	if($exit_code === 100){
@@ -133,31 +155,7 @@ Route::get("/download/{id}/{video_id}", function (Request $request, $id, $video_
             ])->deleteFileAfterSend(true);
         }
         else{
-            return response()->status(400);
+            return response('Xeta bas verdi xahis edirik cookie ve ya video id ni duzgun daxil edin :)', 400);
         }
 
 });
-
-
-//Route::get('/download/{id}', function(Request $request, $id){
-//    return response()->stream(function () use ($id, $request) {
-//        $user = User::where('id', $id)->first();
-//        $cookies = json_decode($user->cookies, true);
-//        $cookies = 'cookie_microstats_visibility=' . $cookies['cookie_microstats_visibility'] . ';' . 'login_token=' . $cookies['login_token'] . ';' . ' PHPSESSID=' . $cookies['PHPSESSID'];
-//        exec(sprintf('python "C:\Users\Es\Desktop\CA-Video\backend\business_logic\video_downloader\main.py" "%s" "https://lms.code.edu.az/unit/view/id:7386" "xaxa.mp4" "True"', $cookies), $filesize, $ex);
-//        $filesize = $filesize[0];
-//        exec(sprintf('python "C:\Users\Es\Desktop\CA-Video\backend\business_logic\video_downloader\main.py" "%s" "https://lms.code.edu.az/unit/view/id:7386" "xaxa.mp4" "False"', $cookies), $filesize, $ex);
-//        while (true) {
-//            echo (string) filesize('C:\Users\Es\Desktop\CA-Video\backend\storage\app\video_cache\xaxa.mp4');
-//            ob_flush();
-//            flush();
-//
-//            // Break the loop if the client aborted the connection (closed the page)
-//            if (connection_aborted()) {break;}
-//            usleep(50000); // 50ms
-//        }
-//    }, 200, [
-//        'Cache-Control' => 'no-cache',
-//        'Content-Type' => 'application/json',
-//    ]);
-//});

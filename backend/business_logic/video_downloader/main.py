@@ -60,7 +60,8 @@ FILE_PATH = join(getcwd(), "..", "..", VIDEO_CACHE_FOLDER_PATH)
 
 #OUTPUT_FILE_PATH = join(FILE_PATH, OUTPUT_FILE_NAME)
 #COMPRESSED_FILE_PATH = join(FILE_PATH, COMPRESSED_FILE_NAME)
-OUTPUT_FILE_PATH  = "/var/www/Code-Academy-IMS-Video-Downloader/backend/storage/app/video_cache/" +  OUTPUT_FILE_NAME
+#OUTPUT_FILE_PATH  = "/var/www/Code-Academy-IMS-Video-Downloader/backend/storage/app/video_cache/" +  OUTPUT_FILE_NAME
+OUTPUT_FILE_PATH = r"C:\Users\Es\Desktop\CA-Video\backend\storage\app\video_cache\\" + OUTPUT_FILE_NAME
 exception_count = 0
 while exception_count < MAX_EXCEPTION_LIMIT:
     try:

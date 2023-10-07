@@ -43,6 +43,7 @@ function App() {
     const animationRoot = React.useRef()
     const mounted = React.useRef(false)
     const snackBarTimeoutRef = React.useRef()
+    const testFieldRef = React.useRef()
     //FORM STATES
     const [phpsession, setPhpsession] = React.useState('')
     const [loginToken, setLoginToken] = React.useState('')
@@ -70,6 +71,7 @@ function App() {
     React.useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
+        setFileId("")
         //try to get access token
         if (code && !TOKEN) {
             //set waiting state
@@ -90,8 +92,11 @@ function App() {
     }, [userData])
 
     React.useEffect(() => {
+        setPhpsession("")
+        setLoginToken("")
+        setMicrostats("")
         //if u ser is logged but while requesting server if server sends 401 then it means token is not valid
-        if (isLogged && TOKEN) getUserData(TOKEN).then(data => {
+        if ((isLogged && TOKEN) || loadingState === 'downloading') getUserData(TOKEN).then(data => {
             if (data !== false) {
                 setUserData(data)
                 setPhpsession(data?.PHPSESSID || "")
@@ -101,7 +106,8 @@ function App() {
                 setLogged(false)
             }
         });
-    }, [isLogged])
+    }, [isLogged, askCookie])
+
 
     //GSAP ANIMATION CONTEXT (DO NOT TOUCH IT)
     React.useEffect(() => {
@@ -290,17 +296,24 @@ function App() {
                 <main className={'flex items-center justify-center h-[90%] p-3'}>
                     <div
                         className={'flex items-stretch gap-2 w-full max-w-[600px] justify-center bg-white p-12 rounded-lg'}>
-                        <TextField  color={'primary'} fullWidth label="Video Linki" onChange={(e)=>setFileId(e.target.value)}/>
+                        <TextField ref={testFieldRef} type={'number'} color={'primary'} fullWidth label="Video Linki" value={fileId} onChange={(e)=>setFileId(e.target.value)}/>
                         <Button variant={'contained'}
                                 onClick={() => {
                                     if (isLogged && !checkCookiesStatus()) setAskCookie(true)
-                                    else if (isLogged && checkCookiesStatus()) {
+                                    else if (isLogged && checkCookiesStatus() && fileId) {
                                        setLoadingState("downloading")
                                         const token = localStorage.getItem('ACCESS_TOKEN')
                                         const id = userData['id']
                                         window.location = `${import.meta.env.VITE_API_BASE_URL}/api/download/${id}/${fileId}`
                                         setLoadingState(false)
-                                    } else {
+                                    }
+                                    else if(!fileId){
+                                        setSnackBarMessage("Xahis olunur id daxil edin")
+                                        setSnackBarState('error')
+                                        setSnackBarVisibility(true)
+                                        setTimeout(() => setSnackBarVisibility(false), 5000);
+                                    }
+                                    else {
                                         setSnackBarMessage("Xahis olunur ilk once qeydiyyatdan kecin")
                                         setSnackBarState('error')
                                         setSnackBarVisibility(true)
@@ -333,11 +346,11 @@ function App() {
                     <br/>
                     <ArrowUpwardIcon fontSize={'large'} className={'animate-bounce'}/>
                     <br/>
-                    <p className={'text-xs'}>Nece Endireceyimi Bilmirem</p>
+                    <p className={'text-xs'}>Nece Endireceyimi Bilmirsen?</p>
                 </div>
+                <CloseIcon fontSize={"large"} sx={{opacity: `${bottomSectionOpened ? '1' : '0'}`, transition: "all 1.3s linear"}} className={`absolute top-[45px] right-[45px] hover:cursor-pointer`}
+                           onClick={() => setBottomSectionOpened(false)}/>
                 <div id={'manual'} className={'hidden justify-center items-center '}>
-                    <CloseIcon fontSize={"large"} className={'absolute top-[25px] right-[25px] hover:cursor-pointer'}
-                               onClick={() => setBottomSectionOpened(false)}/>
 
                     <iframe className={'align-center w-[100%] aspect-video'} width="560" height="315"
                             src="https://www.youtube.com/embed/5NV6Rdv1a3I?si=xzW-KYGLwU4JTIXG"
